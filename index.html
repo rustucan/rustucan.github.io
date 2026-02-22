@@ -2,19 +2,63 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Hızlı Araçlar - Görsel Boyutlandırıcı</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HızlıAraçlar | Ücretsiz Görsel Küçültücü</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
-        .box { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        button { background: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
+        h1 { color: #1a73e8; font-size: 24px; }
+        p { color: #5f6368; }
+        #preview { max-width: 100%; margin: 20px 0; border-radius: 8px; display: none; }
+        .btn { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn:hover { background: #1557b0; }
+        input[type="file"] { margin: 20px 0; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>Ücretsiz Görsel Boyutlandırıcı</h1>
-        <p>Dosyanı seç ve anında optimize et!</p>
-        <input type="file" id="upload" accept="image/*"><br><br>
-        <button onclick="alert('Bu özellik bir sonraki güncellemede aktif olacak!')">Boyutlandır</button>
+    <div class="container">
+        <h1>🖼️ Görsel Sıkıştırıcı</h1>
+        <p>Görsellerinizi kaliteyi bozmadan küçültün.</p>
+        <input type="file" id="upload" accept="image/*">
+        <canvas id="canvas" style="display:none;"></canvas>
+        <img id="preview" alt="Önizleme">
+        <a id="download" style="display:none;"><button class="btn">Küçültülmüş Resmi İndir</button></a>
     </div>
+
+    <script>
+        const upload = document.getElementById('upload');
+        const canvas = document.getElementById('canvas');
+        const preview = document.getElementById('preview');
+        const download = document.getElementById('download');
+
+        upload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const ctx = canvas.getContext('2d');
+                    // %50 küçültme mantığı
+                    const width = img.width * 0.5;
+                    const height = img.height * 0.5;
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7); // Kaliteyi %70'e çeker
+                    preview.src = dataUrl;
+                    preview.style.display = 'block';
+                    download.href = dataUrl;
+                    download.download = "kucultulmus-resim.jpg";
+                    download.style.display = 'block';
+                }
+            };
+        });
+    </script>
 </body>
 </html>
+
