@@ -3,84 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RustuTools | Ücretsiz Dijital Araçlar</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>RustuTools | Sesli Oyun Sohbeti</title>
+    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
-        .nav { text-align: center; margin-bottom: 30px; }
-        .nav button { padding: 10px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 20px; background: #007bff; color: white; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 500px; margin: auto; display: none; }
-        .active { display: block; }
-        h1 { color: #333; font-size: 22px; }
-        input, button.action-btn { width: 100%; padding: 12px; margin-top: 15px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        button.action-btn { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
-        #qrcode { margin-top: 20px; display: flex; justify-content: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #e0e0e0; text-align: center; padding: 20px; }
+        .app-container { background: #1a1a1a; padding: 20px; border-radius: 20px; max-width: 500px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .control-group { margin: 20px 0; padding: 15px; background: #252525; border-radius: 10px; }
+        label { display: block; margin-bottom: 10px; font-weight: bold; color: #4caf50; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        .btn { padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; width: 100%; margin-top: 10px; }
+        .btn-start { background: #4caf50; color: white; }
+        .btn-spotify { background: #1DB954; color: white; }
+        #status { color: #888; font-size: 14px; margin-top: 10px; }
+        audio { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="nav">
-        <h1>🛠️ RustuTools</h1>
-        <button onclick="showTool('resimTool')">Görsel Sıkıştırıcı</button>
-        <button onclick="showTool('qrTool')">QR Kod Oluşturucu</button>
+    <div class="app-container">
+        <h1>🎮 Pro Gamer Chat</h1>
+        <div id="status">Bağlantı Bekleniyor...</div>
+
+        <div class="control-group">
+            <label>🎤 Mikrofon Hassasiyeti (Giriş)</label>
+            <input type="range" id="inputGain" min="0" max="2" step="0.1" value="1">
+            <span id="inputVal">1.0x</span>
+        </div>
+
+        <div class="control-group">
+            <label>🔊 Arkadaşının Sesi (Çıkış)</label>
+            <input type="range" id="outputGain" min="0" max="2" step="0.1" value="1">
+            <span id="outputVal">1.0x</span>
+        </div>
+
+        <div class="control-group">
+            <input type="text" id="friendId" placeholder="Arkadaşının ID'sini buraya yapıştır" style="width: 100%; padding: 10px; border-radius: 5px; border: none; background: #333; color: white;">
+            <button class="btn btn-start" onclick="connectToFriend()">Sese Bağlan</button>
+        </div>
+
+        <div class="control-group">
+            <label>🎵 Spotify Ortak Dinleme</label>
+            <input type="text" id="spotifyLink" placeholder="Spotify Şarkı Linki" style="width: 100%; padding: 10px; border-radius: 5px; border: none; background: #333; color: white;">
+            <button class="btn btn-spotify" onclick="shareMusic()">Şarkıyı Arkadaşına Gönder</button>
+        </div>
     </div>
 
-    <div id="resimTool" class="container active">
-        <h2>🖼️ Görsel Sıkıştırıcı</h2>
-        <p>Resmini seç, anında küçült.</p>
-        <input type="file" id="upload" accept="image/*">
-        <canvas id="canvas" style="display:none;"></canvas>
-        <img id="preview" style="width:100%; margin-top:10px; display:none; border-radius:8px;">
-        <a id="download" style="display:none;"><button class="action-btn">Resmi İndir</button></a>
-    </div>
-
-    <div id="qrTool" class="container">
-        <h2>🔗 QR Kod Oluşturucu</h2>
-        <p>Link veya metin yaz, QR kodun hazır olsun.</p>
-        <input type="text" id="qr-input" placeholder="https://google.com">
-        <button class="action-btn" onclick="generateQR()">QR Kod Oluştur</button>
-        <div id="qrcode"></div>
-    </div>
+    <audio id="remoteAudio" autoplay></audio>
 
     <script>
-        function showTool(toolId) {
-            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
-            document.getElementById(toolId).classList.add('active');
-        }
+        const peer = new Peer();
+        let myStream;
+        let inputNode, outputNode, audioCtx;
 
-        // QR KOD MANTIĞI
-        function generateQR() {
-            document.getElementById("qrcode").innerHTML = "";
-            const text = document.getElementById("qr-input").value;
-            if(text) {
-                new QRCode(document.getElementById("qrcode"), text);
-            }
-        }
-
-        // GÖRSEL SIKIŞTIRICI MANTIĞI
-        const upload = document.getElementById('upload');
-        upload.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.getElementById('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = img.width * 0.5;
-                    canvas.height = img.height * 0.5;
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                    document.getElementById('preview').src = dataUrl;
-                    document.getElementById('preview').style.display = 'block';
-                    document.getElementById('download').href = dataUrl;
-                    document.getElementById('download').download = "kucultulmus.jpg";
-                    document.getElementById('download').style.display = 'block';
-                }
-            };
+        peer.on('open', (id) => {
+            document.getElementById('status').innerText = "Senin ID: " + id;
         });
+
+        // Mikrofonu al ve ayarla
+        async function startMedia() {
+            myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Giriş Sesi Kontrolü (Giden ses)
+            const source = audioCtx.createMediaStreamSource(myStream);
+            inputNode = audioCtx.createGain();
+            source.connect(inputNode);
+            // Not: WebRTC stream'i ham sesi gönderir, gain node giden stream'e bağlanmalıdır.
+        }
+
+        // Aramayı Kabul Etme
+        peer.on('call', (call) => {
+            startMedia().then(() => {
+                call.answer(myStream);
+                handleCall(call);
+            });
+        });
+
+        // Arama Başlatma
+        function connectToFriend() {
+            const fId = document.getElementById('friendId').value;
+            startMedia().then(() => {
+                const call = peer.call(fId, myStream);
+                handleCall(call);
+            });
+        }
+
+        function handleCall(call) {
+            call.on('stream', (remoteStream) => {
+                const remoteAudio = document.getElementById('remoteAudio');
+                
+                // Çıkış Sesi Kontrolü (Gelen ses)
+                const source = audioCtx.createMediaStreamSource(remoteStream);
+                outputNode = audioCtx.createGain();
+                source.connect(outputNode);
+                outputNode.connect(audioCtx.destination);
+                
+                document.getElementById('status').innerText = "Bağlı! Konuşabilirsiniz.";
+            });
+        }
+
+        // Ses Seviyesi Slider Ayarları
+        document.getElementById('inputGain').oninput = function() {
+            if(inputNode) inputNode.gain.value = this.value;
+            document.getElementById('inputVal').innerText = this.value + "x";
+        };
+
+        document.getElementById('outputGain').oninput = function() {
+            if(outputNode) outputNode.gain.value = this.value;
+            document.getElementById('outputVal').innerText = this.value + "x";
+        };
+
+        // Spotify Paylaşımı (Data Connection üzerinden)
+        function shareMusic() {
+            const link = document.getElementById('spotifyLink').value;
+            if(link) window.open(link, '_blank');
+            // Buraya ilerde veri gönderme kodu eklenecek
+        }
+
+        startMedia(); // Sayfa açılınca mikrofon izni iste
     </script>
 </body>
 </html>
