@@ -3,191 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RustuTools PRO | Gamer Connect</title>
+    <title>RustuTools | Ultra Chat & Voice</title>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --primary: #00ff41; --bg: #0a0a0a; --panel: #161616; --text: #e0e0e0; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        :root { --bg: #0b0e14; --panel: #151921; --primary: #8b5cf6; --secondary: #3b82f6; --text: #f3f4f6; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* Header & Share */
-        .header { background: var(--panel); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); }
-        .share-box { display: flex; gap: 10px; }
+        /* Üst Bar */
+        .header { background: var(--panel); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3748; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .logo { font-size: 20px; font-weight: 800; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        /* Main Layout */
-        .main { display: flex; flex: 1; overflow: hidden; padding: 10px; gap: 10px; }
-        .controls { flex: 1; background: var(--panel); border-radius: 15px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .chat { flex: 1.5; background: var(--panel); border-radius: 15px; display: flex; flex-direction: column; }
+        /* Ana Gövde */
+        .main { display: flex; flex: 1; padding: 15px; gap: 15px; overflow: hidden; }
         
-        /* Chat Area */
-        #messages { flex: 1; overflow-y: auto; padding: 15px; border-bottom: 1px solid #333; font-size: 14px; }
-        .chat-input { display: flex; padding: 10px; }
-        input[type="text"] { flex: 1; background: #222; border: none; color: white; padding: 10px; border-radius: 5px; }
+        /* Sol Panel: Kontroller */
+        .sidebar { width: 320px; background: var(--panel); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 10px 15px rgba(0,0,0,0.2); }
+        .card { background: #1e2532; padding: 15px; border-radius: 12px; border: 1px solid #2d3748; }
+        label { display: block; font-size: 12px; color: #9ca3af; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
+        input { width: 100%; background: #0b0e14; border: 1px solid #374151; color: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
         
-        /* Buttons & Sliders */
-        .btn { cursor: pointer; border: none; border-radius: 5px; padding: 10px; font-weight: bold; transition: 0.3s; }
-        .btn-green { background: var(--primary); color: black; }
-        .btn-red { background: #ff4b2b; color: white; }
-        .slider-box { display: flex; flex-direction: column; gap: 5px; }
-        input[type="range"] { accent-color: var(--primary); }
+        /* Butonlar */
+        .btn { cursor: pointer; border: none; border-radius: 8px; padding: 10px 15px; font-weight: bold; transition: all 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-p { background: var(--primary); color: white; }
+        .btn-p:hover { filter: brightness(1.2); transform: translateY(-1px); }
+        .btn-s { background: #374151; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+
+        /* Sağ Panel: Chat */
+        .chat-area { flex: 1; background: var(--panel); border-radius: 20px; display: flex; flex-direction: column; box-shadow: 0 10px 15px rgba(0,0,0,0.2); overflow: hidden; }
+        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; background-image: radial-gradient(#2d3748 0.5px, transparent 0.5px); background-size: 20px 20px; }
         
-        /* QR Overlay */
-        #qr-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; z-index: 100; }
+        /* Mesaj Balonları */
+        .msg { max-width: 70%; padding: 10px 15px; border-radius: 18px; font-size: 14px; line-height: 1.4; position: relative; }
+        .msg-me { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+        .msg-friend { align-self: flex-start; background: #374151; color: white; border-bottom-left-radius: 4px; }
+        
+        .chat-footer { padding: 15px; background: #1e2532; display: flex; gap: 10px; }
+        
+        /* QR & Link Box */
+        #qr-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        #qrcode { background: white; padding: 20px; border-radius: 15px; }
+
+        /* Kaydırıcılar */
+        input[type="range"] { height: 5px; border-radius: 5px; background: #374151; outline: none; -webkit-appearance: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; background: var(--secondary); border-radius: 50%; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2 style="margin:0; color:var(--primary);">🛡️ RUSTU PRO</h2>
-    <div class="share-box">
-        <button class="btn btn-green" onclick="copyLink()">🔗 Linki Kopyala</button>
-        <button class="btn btn-green" onclick="toggleQR()">📱 QR</button>
+    <div class="logo">RUSTU CONNECT v3</div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-s" onclick="copyLink()" style="width: auto;">🔗 Link</button>
+        <button class="btn btn-s" onclick="openQR()" style="width: auto;">📱 QR</button>
     </div>
 </div>
 
 <div class="main">
-    <div class="controls">
-        <div class="slider-box">
-            <label>Kendi ID'ni Belirle:</label>
-            <input type="text" id="myCustomId" placeholder="Örn: rustu123">
-            <button class="btn btn-green" onclick="setMyId()">ID Kaydet</button>
-        </div>
-        
-        <hr style="border:0.5px solid #333; width:100%;">
-
-        <div class="slider-box">
-            <label>🎤 Mikrofon Sesi: <span id="inVal">1.0</span></label>
-            <input type="range" id="inGain" min="0" max="3" step="0.1" value="1">
-            <button id="muteMic" class="btn btn-green" onclick="toggleMic()">🎤 Mic: AÇIK</button>
+    <div class="sidebar">
+        <div class="card">
+            <label>Profilim</label>
+            <input type="text" id="myId" placeholder="Örn: rustu_pro">
+            <button class="btn btn-p" onclick="initMyPeer()">Sisteme Giriş Yap</button>
+            <div id="status" style="font-size: 11px; margin-top: 8px; color: #10b981;">🔴 Bağlı Değil</div>
         </div>
 
-        <div class="slider-box">
-            <label>🔊 Arkadaşının Sesi: <span id="outVal">1.0</span></label>
-            <input type="range" id="outGain" min="0" max="3" step="0.1" value="1">
-            <button id="muteSpk" class="btn btn-green" onclick="toggleSpk()">🔊 Hoparlör: AÇIK</button>
+        <div class="card">
+            <label>Ses Kontrolleri</label>
+            <div style="margin-bottom:15px;">
+                <label style="text-transform:none;">🎤 Mikrofon Gücü (<span id="inV">1.0</span>)</label>
+                <input type="range" id="inG" min="0" max="4" step="0.1" value="1">
+                <button id="micBtn" class="btn btn-p" onclick="toggleMic()" style="margin-top:5px;">🎤 Mic: AÇIK</button>
+            </div>
+            <div>
+                <label style="text-transform:none;">🔊 Arkadaşın Sesi (<span id="outV">1.0</span>)</label>
+                <input type="range" id="outG" min="0" max="4" step="0.1" value="1">
+                <button id="spkBtn" class="btn btn-p" onclick="toggleSpk()" style="margin-top:5px;">🔊 Hoparlör: AÇIK</button>
+            </div>
         </div>
 
-        <div class="slider-box">
-            <input type="text" id="destId" placeholder="Arkadaşının ID'si">
-            <button class="btn btn-green" onclick="startCall()">SESE VE SOHBETE BAĞLAN</button>
+        <div class="card">
+            <label>Bağlantı</label>
+            <input type="text" id="targetId" placeholder="Arkadaşının ID'si">
+            <button class="btn btn-p" onclick="callFriend()">📞 ARA VE BAĞLAN</button>
         </div>
-        <div id="status" style="font-size:12px; color:var(--primary);">Durum: Bekleniyor...</div>
     </div>
 
-    <div class="chat">
-        <div id="messages"></div>
-        <div class="chat-input">
-            <input type="text" id="chatMsg" placeholder="Mesaj gönder..." onkeypress="checkEnter(event)">
-            <button class="btn btn-green" style="margin-left:5px;" onclick="sendChat()">Gönder</button>
+    <div class="chat-area">
+        <div id="messages">
+            <div class="msg msg-friend">Hoş geldin! Önce giriş yap, sonra ID paylaşarak konuşmaya başla.</div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="chatIn" placeholder="Mesajınızı yazın..." onkeypress="if(event.key==='Enter') sendMsg()">
+            <button class="btn btn-p" onclick="sendMsg()" style="width: 80px;">Gönder</button>
         </div>
     </div>
 </div>
 
-<div id="qr-overlay" onclick="this.style.display='none'">
+<div id="qr-overlay" style="display:none;" onclick="this.style.display='none'">
     <div id="qrcode"></div>
-    <p style="color:black; text-align:center; margin-top:10px;">Kapatmak için tıkla</p>
+    <p style="margin-top:15px;">Kapatmak için ekrana dokun</p>
 </div>
 
 <audio id="remoteAudio" autoplay></audio>
 
 <script>
-    let peer, conn, call, myStream, audioCtx, inNode, outNode;
-    let micActive = true, spkActive = true;
+    let peer, conn, myStream, audioCtx, outGainNode;
+    let isMic = true, isSpk = true;
 
-    function setMyId() {
-        const customId = document.getElementById('myCustomId').value;
-        if(!customId) return alert("Bir ID yaz!");
-        
-        peer = new Peer(customId, {
-            config: {'iceServers': [{ url: 'stun:stun.l.google.com:19302' }]}
+    function initMyPeer() {
+        const id = document.getElementById('myId').value;
+        if(!id) return alert("Lütfen bir ID belirle!");
+
+        peer = new Peer(id, {
+            config: {
+                'iceServers': [
+                    { url: 'stun:stun.l.google.com:19302' },
+                    { url: 'stun:stun1.l.google.com:19302' },
+                    { url: 'stun:stun2.l.google.com:19302' }
+                ]
+            }
         });
 
         peer.on('open', (id) => {
-            document.getElementById('status').innerText = "ID Hazır: " + id;
+            document.getElementById('status').innerText = "🟢 Çevrimiçi: " + id;
+            document.getElementById('status').style.color = "#10b981";
         });
 
-        peer.on('connection', (c) => { conn = c; setupChat(); });
-        peer.on('call', (c) => {
-            navigator.mediaDevices.getUserMedia({audio:true}).then(s => {
+        peer.on('connection', c => { conn = c; setupChat(); });
+
+        peer.on('call', call => {
+            navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}}).then(s => {
                 myStream = s;
-                c.answer(s);
-                handleCall(c);
+                call.answer(s);
+                handleStream(call);
             });
         });
     }
 
-    async function startCall() {
-        const id = document.getElementById('destId').value;
-        myStream = await navigator.mediaDevices.getUserMedia({audio:true});
-        conn = peer.connect(id);
+    async function callFriend() {
+        const tid = document.getElementById('targetId').value;
+        myStream = await navigator.mediaDevices.getUserMedia({audio: true});
+        conn = peer.connect(tid);
         setupChat();
-        call = peer.call(id, myStream);
-        handleCall(call);
+        const call = peer.call(tid, myStream);
+        handleStream(call);
     }
 
-    function handleCall(c) {
-        c.on('stream', (rs) => {
+    function handleStream(call) {
+        call.on('stream', rs => {
             audioCtx = new AudioContext();
-            const src = audioCtx.createMediaStreamSource(rs);
-            outNode = audioCtx.createGain();
-            src.connect(outNode);
-            outNode.connect(audioCtx.destination);
-            document.getElementById('status').innerText = "BAĞLANDI!";
+            const source = audioCtx.createMediaStreamSource(rs);
+            outGainNode = audioCtx.createGain();
+            source.connect(outGainNode);
+            outGainNode.connect(audioCtx.destination);
+            addMsg("Sohbet", "Sistem: Ses bağlantısı kuruldu!", "friend");
         });
     }
 
-    // Ses Kontrolleri
-    document.getElementById('inGain').oninput = function() {
-        document.getElementById('inVal').innerText = this.value;
-        // Mikrofon kazancı normalde giden stream'e uygulanır
-    };
-    document.getElementById('outGain').oninput = function() {
-        if(outNode) outNode.gain.value = this.value;
-        document.getElementById('outVal').innerText = this.value;
+    // Ses Ayarları
+    document.getElementById('inG').oninput = function() { document.getElementById('inV').innerText = this.value; };
+    document.getElementById('outG').oninput = function() { 
+        if(outGainNode) outGainNode.gain.value = this.value; 
+        document.getElementById('outV').innerText = this.value; 
     };
 
     function toggleMic() {
-        micActive = !micActive;
-        myStream.getAudioTracks()[0].enabled = micActive;
-        document.getElementById('muteMic').innerText = micActive ? "🎤 Mic: AÇIK" : "🎤 Mic: KAPALI";
-        document.getElementById('muteMic').className = micActive ? "btn btn-green" : "btn btn-red";
+        isMic = !isMic;
+        myStream.getAudioTracks()[0].enabled = isMic;
+        document.getElementById('micBtn').innerText = isMic ? "🎤 Mic: AÇIK" : "🎤 Mic: KAPALI";
+        document.getElementById('micBtn').className = isMic ? "btn btn-p" : "btn btn-danger";
     }
 
     function toggleSpk() {
-        spkActive = !spkActive;
+        isSpk = !isSpk;
         const ra = document.getElementById('remoteAudio');
-        ra.muted = !spkActive;
-        document.getElementById('muteSpk').innerText = spkActive ? "🔊 Hoparlör: AÇIK" : "🔊 Hoparlör: KAPALI";
-        document.getElementById('muteSpk').className = spkActive ? "btn btn-green" : "btn btn-red";
+        ra.muted = !isSpk;
+        document.getElementById('spkBtn').innerText = isSpk ? "🔊 Hoparlör: AÇIK" : "🔊 Hoparlör: KAPALI";
+        document.getElementById('spkBtn').className = isSpk ? "btn btn-p" : "btn btn-danger";
     }
 
-    // Sohbet Fonksiyonları
-    function setupChat() {
-        conn.on('data', data => { addMsg("Arkadaşın: " + data); });
+    // Chat
+    function setupChat() { conn.on('data', d => addMsg("Arkadaşın", d, "friend")); }
+    function sendMsg() {
+        const m = document.getElementById('chatIn').value;
+        if(conn && m) { conn.send(m); addMsg("Sen", m, "me"); document.getElementById('chatIn').value = ""; }
     }
-    function sendChat() {
-        const m = document.getElementById('chatMsg').value;
-        if(conn && m) { conn.send(m); addMsg("Sen: " + m); document.getElementById('chatMsg').value = ""; }
-    }
-    function addMsg(t) { 
+    function addMsg(user, text, type) {
         const div = document.getElementById('messages');
-        div.innerHTML += `<div>${t}</div>`;
+        const mDiv = document.createElement('div');
+        mDiv.className = `msg msg-${type}`;
+        mDiv.innerText = text;
+        div.appendChild(mDiv);
         div.scrollTop = div.scrollHeight;
     }
-    function checkEnter(e) { if(e.key === 'Enter') sendChat(); }
 
     // Paylaşım
-    function copyLink() {
-        navigator.clipboard.writeText(window.location.href);
-        alert("Link kopyalandı!");
-    }
-    function toggleQR() {
-        const qrdiv = document.getElementById('qrcode');
-        qrdiv.innerHTML = "";
-        new QRCode(qrdiv, window.location.href);
-        document.getElementById('qr-overlay').style.display = 'block';
+    function copyLink() { navigator.clipboard.writeText(window.location.href); alert("Link kopyalandı!"); }
+    function openQR() {
+        document.getElementById('qrcode').innerHTML = "";
+        new QRCode(document.getElementById('qrcode'), window.location.href);
+        document.getElementById('qr-overlay').style.display = 'flex';
     }
 </script>
 </body>
 </html>
-
